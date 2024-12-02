@@ -7,6 +7,7 @@ function saveAudioToLocalStorage(key, audioURL) {
         reader.onload = function () {
           localStorage.setItem(key, reader.result); // Store Base64 string
           console.log(`${key} saved to localStorage`);
+          alert(`${key} saved to localStorage`);
         };
         reader.readAsDataURL(blob); // Convert Blob to Base64
       })
