@@ -1,10 +1,11 @@
 const CACHE_NAME = 'beaulne-player-cache-v2';
 const ASSETS = [
-    './index.html',
-    './manifest.json',
-    './styles.css',
-    './script.js',
-    './audio/noise.mp3'
+    '/beaulne-player/index.html',
+    '/beaulne-player/manifest.json',
+    '/beaulne-player/service-worker.js',
+    '/beaulne-player/audio/noise.mp3',
+    '/beaulne-player/styles.css',
+    '/beaulne-player/script.js'
 ];
 
 // Install event - cache all assets
@@ -18,27 +19,11 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve cached files if available
 self.addEventListener('fetch', (event) => {
-    if (event.request.mode === 'navigate') {
-        // Serve index.html for navigation requests
-        event.respondWith(
-            caches.match('./index.html').then((response) => {
-                return response || fetch('./index.html');
-            })
-        );
-    } else {
-        // Handle other requests (e.g., static assets and audio files)
-        event.respondWith(
-            caches.match(event.request).then((response) => {
-                return response || fetch(event.request).then((fetchResponse) => {
-                    // Cache the fetched response dynamically
-                    return caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, fetchResponse.clone());
-                        return fetchResponse;
-                    });
-                });
-            })
-        );
-    }
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request);
+        })
+    );
 });
 
 // Activate event - clear old caches
