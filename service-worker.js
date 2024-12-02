@@ -1,4 +1,4 @@
-const CACHE_NAME = 'audio-player-cache-v2';
+const CACHE_NAME = 'audio-player-cache-v3';
 const assetsToCache = [
   './',
   './index.html',
