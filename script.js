@@ -46,7 +46,7 @@ async function saveAudioToIndexedDB(key, audioURL) {
   });
 }
 
-// Play audio from IndexedDB using Web Audio API
+// Play audio from IndexedDB
 async function playAudioFromIndexedDB(key) {
   const db = await openDatabase();
 
@@ -71,8 +71,10 @@ async function playAudioFromIndexedDB(key) {
         gainNode = audioContext.createGain();
         gainNode.gain.value = document.getElementById('volume-slider').value; // Set initial volume
 
-        // Connect gainNode to the destination
-        gainNode.connect(audioContext.destination);
+        // Resume context if in a suspended state
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
 
         // Decode and play the audio
         const arrayBuffer = await result.file.arrayBuffer();
@@ -80,6 +82,7 @@ async function playAudioFromIndexedDB(key) {
           sourceNode = audioContext.createBufferSource();
           sourceNode.buffer = buffer;
           sourceNode.connect(gainNode); // Connect the source to gainNode
+          gainNode.connect(audioContext.destination); // Connect gainNode to destination
           sourceNode.start(0);
           currentAudio = sourceNode;
           console.log(`Playing ${key}`);
@@ -107,12 +110,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Set up event listeners for play buttons
-document.getElementById('play-audio-1').addEventListener('click', () => {
+document.getElementById('play-audio-1').addEventListener('click', async () => {
+  if (audioContext && audioContext.state === 'suspended') {
+    await audioContext.resume(); // Ensure the AudioContext is active
+  }
   playAudioFromIndexedDB('audio1')
     .catch((error) => console.error('Error playing audio1:', error));
 });
 
-document.getElementById('play-audio-2').addEventListener('click', () => {
+document.getElementById('play-audio-2').addEventListener('click', async () => {
+  if (audioContext && audioContext.state === 'suspended') {
+    await audioContext.resume(); // Ensure the AudioContext is active
+  }
   playAudioFromIndexedDB('audio2')
     .catch((error) => console.error('Error playing audio2:', error));
 });
