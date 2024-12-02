@@ -13,8 +13,6 @@
   "theme_color": "#000000",
   "background_color": "#000000",
   "cache": [
-    "/audio/welcome.wav",
-    "/audio/artist.wav",
-    "/audio/artwork.wav"
+    "/audio/Noise.wav"
   ]
 }
