@@ -28,10 +28,10 @@ function saveAudioToLocalStorage(key, audioURL) {
   // Save the audio files to localStorage when the page loads
   document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('audio1')) {
-      saveAudioToLocalStorage('audio1', './audio1.mp3');
+      saveAudioToLocalStorage('audio1', './noise.mp3');
     }
     if (!localStorage.getItem('audio2')) {
-      saveAudioToLocalStorage('audio2', './audio2.mp3');
+      saveAudioToLocalStorage('audio2', './noise.mp3');
     }
   });
   
