@@ -3,25 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Manifest -->
     <link rel="manifest" href="manifest.json">
+    
+    <!-- Stylesheet -->
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- iOS-specific PWA settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Title -->
     <title>Offline Audio PWA</title>
 </head>
 <body>
-    <h1>Offline Audio PWA</h1>
-    <button id="playTrack1">Play Track 1</button>
-    <button id="playTrack2">Play Track 2</button>
+  <h1>Offline Audio PWA</h1>
+  <button id="playTrack1">Play Track 1</button>
+  <button id="playTrack2">Play Track 2</button>
 
-    <script>
-        document.getElementById('playTrack1').addEventListener('click', () => {
-            const audio = new Audio('audio/noise.mp3');
-            audio.play();
-        });
+  <!-- Service Worker Registration -->
+  <script>
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('./service-worker.js')
+              .then((registration) => {
+                  console.log('Service Worker registered with scope:', registration.scope);
+              })
+              .catch((error) => {
+                  console.error('Service Worker registration failed:', error);
+              });
+      }
+  </script>
 
-        document.getElementById('playTrack2').addEventListener('click', () => {
-            const audio = new Audio('audio/noise.mp3');
-            audio.play();
-        });
-    </script>
+  <!-- Audio Playback Script -->
+  <script>
+      document.getElementById('playTrack1').addEventListener('click', () => {
+          const audio = new Audio('audio/noise.mp3');
+          audio.play();
+      });
+
+      document.getElementById('playTrack2').addEventListener('click', () => {
+          const audio = new Audio('audio/noise.mp3');
+          audio.play();
+      });
+  </script>
 </body>
 </html>
