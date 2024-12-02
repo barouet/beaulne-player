@@ -5,6 +5,7 @@ const assetsToCache = [
   './style.css',
   './script.js',
   './noise.mp3',
+  './mel.mp3',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -19,6 +20,7 @@ self.addEventListener('install', (event) => {
           './style.css',
           './script.js',
           './noise.mp3',
+          './mel.mp3',
           './manifest.json',
           './icon-192.png',
           './icon-512.png'

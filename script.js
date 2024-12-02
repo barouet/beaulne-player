@@ -31,7 +31,7 @@ function saveAudioToLocalStorage(key, audioURL) {
       saveAudioToLocalStorage('audio1', './noise.mp3');
     }
     if (!localStorage.getItem('audio2')) {
-      saveAudioToLocalStorage('audio2', './noise.mp3');
+      saveAudioToLocalStorage('audio2', './mel.mp3');
     }
   });
   
