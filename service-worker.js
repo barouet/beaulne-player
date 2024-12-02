@@ -10,6 +10,25 @@ const assetsToCache = [
   './icon-512.png'
 ];
 
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll([
+          './',
+          './index.html',
+          './style.css',
+          './script.js',
+          './noise.mp3',
+          './manifest.json',
+          './icon-192.png',
+          './icon-512.png'
+        ]);
+      }).catch((error) => {
+        console.error('Failed to cache:', error);
+      })
+    );
+  });
+
 
 // Install event: Cache assets
 self.addEventListener('install', (event) => {
