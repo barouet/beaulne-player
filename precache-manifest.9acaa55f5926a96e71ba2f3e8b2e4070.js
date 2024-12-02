@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "3243f686e8cf001c32977610d19a2900",
+    "revision": "8c12b3aa2bb0df100a797d634c5d0416",
     "url": "/beaulne-player/index.html"
   },
   {
-    "revision": "6deb326d8e41c4b8f02c",
+    "revision": "17a91b73e9f4faeb66c1",
     "url": "/beaulne-player/static/css/main.328bd824.chunk.css"
   },
   {
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/beaulne-player/static/js/2.87aebdb6.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "6deb326d8e41c4b8f02c",
-    "url": "/beaulne-player/static/js/main.233c29ac.chunk.js"
+    "revision": "17a91b73e9f4faeb66c1",
+    "url": "/beaulne-player/static/js/main.0f55a78b.chunk.js"
   },
   {
     "revision": "417dd11e39e05b054e66",

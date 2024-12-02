@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/beaulne-player/precache-manifest.01ad7e9e737302978870b14a71e4028a.js"
+  "/beaulne-player/precache-manifest.9acaa55f5926a96e71ba2f3e8b2e4070.js"
 );
 
 self.addEventListener('message', (event) => {
