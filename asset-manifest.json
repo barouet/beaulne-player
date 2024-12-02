@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/beaulne-player/static/css/main.328bd824.chunk.css",
-    "main.js": "/beaulne-player/static/js/main.8975a34d.chunk.js",
-    "main.js.map": "/beaulne-player/static/js/main.8975a34d.chunk.js.map",
+    "main.js": "/beaulne-player/static/js/main.cc67e16d.chunk.js",
+    "main.js.map": "/beaulne-player/static/js/main.cc67e16d.chunk.js.map",
     "runtime-main.js": "/beaulne-player/static/js/runtime-main.89ebf74c.js",
     "runtime-main.js.map": "/beaulne-player/static/js/runtime-main.89ebf74c.js.map",
     "static/js/2.87aebdb6.chunk.js": "/beaulne-player/static/js/2.87aebdb6.chunk.js",
     "static/js/2.87aebdb6.chunk.js.map": "/beaulne-player/static/js/2.87aebdb6.chunk.js.map",
     "index.html": "/beaulne-player/index.html",
-    "precache-manifest.8d16b6ede370eeb885604e585266ef1b.js": "/beaulne-player/precache-manifest.8d16b6ede370eeb885604e585266ef1b.js",
+    "precache-manifest.6dc9315255f4c1a06dedc41678f65fe2.js": "/beaulne-player/precache-manifest.6dc9315255f4c1a06dedc41678f65fe2.js",
     "service-worker.js": "/beaulne-player/service-worker.js",
     "static/css/main.328bd824.chunk.css.map": "/beaulne-player/static/css/main.328bd824.chunk.css.map",
     "static/js/2.87aebdb6.chunk.js.LICENSE.txt": "/beaulne-player/static/js/2.87aebdb6.chunk.js.LICENSE.txt"
@@ -17,6 +17,6 @@
     "static/js/runtime-main.89ebf74c.js",
     "static/js/2.87aebdb6.chunk.js",
     "static/css/main.328bd824.chunk.css",
-    "static/js/main.8975a34d.chunk.js"
+    "static/js/main.cc67e16d.chunk.js"
   ]
 }
