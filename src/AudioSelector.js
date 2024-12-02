@@ -1,18 +1,67 @@
-import React, { useState, useRef } from 'react';
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
 import './styles.css';
+const BASE_PATH = '/beaulne-player';
 
 const AudioSelector = () => {
   const [playing, setPlaying] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [volume, setVolume] = useState(80);
   const [previousVolume, setPreviousVolume] = useState(80);
-  const audioRef = useRef(new Audio());
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = new Audio();
+    audio.setAttribute('playsinline', 'true');
+    audio.setAttribute('webkit-playsinline', 'true'); // For older iOS versions
+    audio.preload = 'auto';
+    
+    const enableAudio = () => {
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      const source = context.createBufferSource();
+      source.buffer = context.createBuffer(1, 1, 22050);
+      source.connect(context.destination);
+      source.start(0);
+      
+      document.removeEventListener('touchstart', enableAudio);
+      document.removeEventListener('touchend', enableAudio);
+      document.removeEventListener('click', enableAudio);
+    };
+
+    document.addEventListener('touchstart', enableAudio);
+    document.addEventListener('touchend', enableAudio);
+    document.addEventListener('click', enableAudio);
+
+    audioRef.current = audio;
+
+    return () => {
+      document.removeEventListener('touchstart', enableAudio);
+      document.removeEventListener('touchend', enableAudio);
+      document.removeEventListener('click', enableAudio);
+    };
+  }, []);
+
+  const playSound = async (soundUrl) => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.src = soundUrl;
+        await audioRef.current.load();
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.error('Playback error:', error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
+  };
 
   const tracks = [
-    { id: 1, title: "Welcome", duration: "2:30", src:`${process.env.PUBLIC_URL}/audio/Noise.wav`},
-    { id: 2, title: "Artist", duration: "3:45", src: `${process.env.PUBLIC_URL}/audio/Noise.wav` },
-    { id: 3, title: "Artwork", duration: "4:15", src: `${process.env.PUBLIC_URL}/audio/Noise.wav` }
+    { id: 1, title: "Welcome", duration: "2:30", src: `${BASE_PATH}/audio/noise.mp3` },
+    { id: 2, title: "Artist", duration: "3:45", src: `${BASE_PATH}/audio/noise.mp3` },
+    { id: 3, title: "Artwork", duration: "4:15", src: `${BASE_PATH}/audio/noise.mp3` }
   ];
 
   const handleTrackSelect = (track) => {
@@ -59,11 +108,7 @@ const AudioSelector = () => {
             className={`track-button ${selectedTrack?.id === track.id ? 'selected' : ''}`}
           >
             <div className="play-icon">
-              {selectedTrack?.id === track.id && playing ? (
-                <Pause size={24} />
-              ) : (
-                <Play size={24} />
-              )}
+              {selectedTrack?.id === track.id && playing ? "⏸️" : "▶️"}
             </div>
             <div className="track-info">
               <div className="track-title">{track.title}</div>
@@ -76,11 +121,7 @@ const AudioSelector = () => {
       {selectedTrack && (
         <div className="volume-control">
           <button onClick={toggleMute}>
-            {volume === 0 ? (
-              <VolumeX size={24} />
-            ) : (
-              <Volume2 size={24} />
-            )}
+            {volume === 0 ? "🔇" : "🔊"}
           </button>
           <input
             type="range"

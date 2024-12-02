@@ -92,3 +92,15 @@ body {
   font-size: 14px;
   min-width: 48px;
 }
+
+
+.audio-controls {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.audio-controls audio {
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+}
