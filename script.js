@@ -62,8 +62,10 @@ async function playAudioFromIndexedDB(key) {
         }
         const audioURL = URL.createObjectURL(result.file);
         const audio = new Audio(audioURL);
-        audio.volume = audioVolume; // Set volume to slider value
         currentAudio = audio;
+
+        // Set the audio volume before playing
+        currentAudio.volume = audioVolume;
 
         audio.play()
           .then(() => {
@@ -105,8 +107,9 @@ document.getElementById('play-audio-2').addEventListener('click', () => {
 
 // Set up event listener for volume slider
 document.getElementById('volume-slider').addEventListener('input', (event) => {
-  audioVolume = event.target.value;
+  audioVolume = event.target.value; // Update the global audio volume variable
   if (currentAudio) {
-    currentAudio.volume = audioVolume;
+    currentAudio.volume = audioVolume; // Apply the new volume to the current audio
+    console.log(`Volume set to: ${audioVolume}`);
   }
 });
