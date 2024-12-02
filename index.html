@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Player</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-  <title>PWA Audio Player</title>
 </head>
 <body>
-  <h1>PWA Audio Player</h1>
-  <button id="play-audio-1">Play Audio 1</button>
-  <button id="play-audio-2">Play Audio 2</button>
-
+  <div class="container">
+    <h1>Audio Player</h1>
+    <div class="audio-controls">
+      <button id="play-audio-1" class="audio-btn">Play Audio 1</button>
+      <button id="play-audio-2" class="audio-btn">Play Audio 2</button>
+    </div>
+    <div class="volume-control">
+      <label for="volume-slider">Volume:</label>
+      <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
