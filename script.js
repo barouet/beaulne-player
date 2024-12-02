@@ -1,46 +1,96 @@
-// Function to store audio in localStorage
-function saveAudioToLocalStorage(key, audioURL) {
-    fetch(audioURL)
-      .then((response) => response.blob())
-      .then((blob) => {
-        const reader = new FileReader();
-        reader.onload = function () {
-          localStorage.setItem(key, reader.result); // Store Base64 string
-          console.log(`${key} saved to localStorage`);
-          alert(`${key} saved to localStorage`);
-        };
-        reader.readAsDataURL(blob); // Convert Blob to Base64
-      })
-      .catch((error) => console.error('Error saving audio:', error));
+// Function to initialize IndexedDB
+function openDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('AudioDB', 1);
+  
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('audio')) {
+          db.createObjectStore('audio', { keyPath: 'name' });
+        }
+      };
+  
+      request.onsuccess = (event) => resolve(event.target.result);
+      request.onerror = (event) => reject(event.target.error);
+    });
   }
   
-  // Function to load audio from localStorage and play
-  function playAudioFromLocalStorage(key) {
-    const storedAudio = localStorage.getItem(key);
-    if (storedAudio) {
-      const audio = new Audio(storedAudio);
-      audio.play();
-    } else {
-      console.error(`Audio not found in localStorage for key: ${key}`);
-      alert('Audio file not available offline. Please save it first.');
-    }
+  // Function to store audio in IndexedDB
+  async function saveAudioToIndexedDB(key, audioURL) {
+    const db = await openDatabase();
+  
+    return new Promise((resolve, reject) => {
+      fetch(audioURL)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Failed to fetch ${audioURL}`);
+          return response.blob();
+        })
+        .then((blob) => {
+          const transaction = db.transaction('audio', 'readwrite');
+          const store = transaction.objectStore('audio');
+          store.put({ name: key, file: blob });
+  
+          transaction.oncomplete = () => {
+            console.log(`${key} saved to IndexedDB`);
+            alert(`${key} saved to IndexedDB`);
+            resolve();
+          };
+  
+          transaction.onerror = (event) => reject(event.target.error);
+        })
+        .catch((error) => reject(error));
+    });
   }
   
-  // Save the audio files to localStorage when the page loads
+  // Function to load audio from IndexedDB and play
+  async function playAudioFromIndexedDB(key) {
+    const db = await openDatabase();
+  
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('audio', 'readonly');
+      const store = transaction.objectStore('audio');
+      const request = store.get(key);
+  
+      request.onsuccess = (event) => {
+        const result = event.target.result;
+        if (result && result.file) {
+          const audioURL = URL.createObjectURL(result.file);
+          const audio = new Audio(audioURL);
+          audio.play()
+            .then(() => {
+              console.log(`Playing ${key}`);
+              resolve();
+            })
+            .catch((error) => reject(error));
+        } else {
+          alert(`Audio file not available offline for key: ${key}`);
+          reject(`Audio file not found for key: ${key}`);
+        }
+      };
+  
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+  
+  // Save the audio files to IndexedDB when the page loads
   document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('audio1')) {
-      saveAudioToLocalStorage('audio1', './noise.mp3');
-    }
-    if (!localStorage.getItem('audio2')) {
-      saveAudioToLocalStorage('audio2', './mel.mp3');
-    }
+    saveAudioToIndexedDB('audio1', './noise.mp3')
+      .then(() => console.log('audio1 saved to IndexedDB'))
+      .catch((error) => console.error('Error saving audio1:', error));
+  
+    saveAudioToIndexedDB('audio2', './mel.mp3')
+      .then(() => console.log('audio2 saved to IndexedDB'))
+      .catch((error) => console.error('Error saving audio2:', error));
   });
   
   // Set up event listeners for play buttons
   document.getElementById('play-audio-1').addEventListener('click', () => {
-    playAudioFromLocalStorage('audio1');
+    playAudioFromIndexedDB('audio1')
+      .catch((error) => console.error('Error playing audio1:', error));
   });
   
   document.getElementById('play-audio-2').addEventListener('click', () => {
-    playAudioFromLocalStorage('audio2');
+    playAudioFromIndexedDB('audio2')
+      .catch((error) => console.error('Error playing audio2:', error));
   });
+  
