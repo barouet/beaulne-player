@@ -1,7 +1,7 @@
-let currentAudio = null; // Track the currently playing audio
 let audioContext = null; // Web Audio API context
 let gainNode = null; // Node to control volume
-let sourceNode = null; // Audio source node
+let sourceNode = null; // Current audio source node
+let currentBuffer = null; // Cached audio buffer for the current file
 
 // Initialize IndexedDB
 function openDatabase() {
@@ -46,8 +46,12 @@ async function saveAudioToIndexedDB(key, audioURL) {
   });
 }
 
-// Play audio from IndexedDB
+// Play audio from IndexedDB using Web Audio API
 async function playAudioFromIndexedDB(key) {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
@@ -58,38 +62,37 @@ async function playAudioFromIndexedDB(key) {
     request.onsuccess = async (event) => {
       const result = event.target.result;
       if (result && result.file) {
-        if (audioContext) {
-          // Stop any currently playing audio
-          if (sourceNode) {
-            sourceNode.disconnect();
-          }
-          audioContext.close();
-        }
-
-        // Initialize Web Audio API
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        gainNode = audioContext.createGain();
-        gainNode.gain.value = document.getElementById('volume-slider').value; // Set initial volume
-
-        // Resume context if in a suspended state
         if (audioContext.state === 'suspended') {
-          await audioContext.resume();
+          await audioContext.resume(); // Ensure AudioContext is active
         }
 
-        // Decode and play the audio
         const arrayBuffer = await result.file.arrayBuffer();
         audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+          currentBuffer = buffer; // Cache the buffer
+
+          // Stop the previous source node if playing
+          if (sourceNode) {
+            sourceNode.stop();
+          }
+
+          // Create new source node
           sourceNode = audioContext.createBufferSource();
           sourceNode.buffer = buffer;
-          sourceNode.connect(gainNode); // Connect the source to gainNode
-          gainNode.connect(audioContext.destination); // Connect gainNode to destination
+
+          // Create or reuse GainNode for volume control
+          if (!gainNode) {
+            gainNode = audioContext.createGain();
+            gainNode.connect(audioContext.destination);
+          }
+          sourceNode.connect(gainNode);
+
+          // Start playback
           sourceNode.start(0);
-          currentAudio = sourceNode;
           console.log(`Playing ${key}`);
           resolve();
         });
       } else {
-        alert(`Audio file not available offline for key: ${key}`);
+        console.error(`Audio file not found for key: ${key}`);
         reject(`Audio file not found for key: ${key}`);
       }
     };
@@ -98,7 +101,15 @@ async function playAudioFromIndexedDB(key) {
   });
 }
 
-// Save the audio files to IndexedDB when the page loads
+// Adjust volume dynamically
+function adjustVolume(value) {
+  if (gainNode) {
+    gainNode.gain.value = value;
+    console.log(`Volume adjusted to: ${value}`);
+  }
+}
+
+// Save audio files to IndexedDB on page load
 document.addEventListener('DOMContentLoaded', () => {
   saveAudioToIndexedDB('audio1', './noise.mp3')
     .then(() => console.log('audio1 saved to IndexedDB'))
@@ -109,28 +120,18 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch((error) => console.error('Error saving audio2:', error));
 });
 
-// Set up event listeners for play buttons
-document.getElementById('play-audio-1').addEventListener('click', async () => {
-  if (audioContext && audioContext.state === 'suspended') {
-    await audioContext.resume(); // Ensure the AudioContext is active
-  }
+// Play buttons
+document.getElementById('play-audio-1').addEventListener('click', () => {
   playAudioFromIndexedDB('audio1')
     .catch((error) => console.error('Error playing audio1:', error));
 });
 
-document.getElementById('play-audio-2').addEventListener('click', async () => {
-  if (audioContext && audioContext.state === 'suspended') {
-    await audioContext.resume(); // Ensure the AudioContext is active
-  }
+document.getElementById('play-audio-2').addEventListener('click', () => {
   playAudioFromIndexedDB('audio2')
     .catch((error) => console.error('Error playing audio2:', error));
 });
 
-// Set up event listener for volume slider
+// Volume slider
 document.getElementById('volume-slider').addEventListener('input', (event) => {
-  const volume = event.target.value;
-  if (gainNode) {
-    gainNode.gain.value = volume; // Adjust volume dynamically
-    console.log(`Volume set to: ${volume}`);
-  }
+  adjustVolume(event.target.value);
 });
