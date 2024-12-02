@@ -1,5 +1,7 @@
 let currentAudio = null; // Track the currently playing audio
-let audioVolume = 0.5; // Default volume
+let audioContext = null; // Web Audio API context
+let gainNode = null; // Node to control volume
+let sourceNode = null; // Audio source node
 
 // Initialize IndexedDB
 function openDatabase() {
@@ -44,7 +46,7 @@ async function saveAudioToIndexedDB(key, audioURL) {
   });
 }
 
-// Play audio from IndexedDB
+// Play audio from IndexedDB using Web Audio API
 async function playAudioFromIndexedDB(key) {
   const db = await openDatabase();
 
@@ -53,26 +55,36 @@ async function playAudioFromIndexedDB(key) {
     const store = transaction.objectStore('audio');
     const request = store.get(key);
 
-    request.onsuccess = (event) => {
+    request.onsuccess = async (event) => {
       const result = event.target.result;
       if (result && result.file) {
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio.currentTime = 0;
+        if (audioContext) {
+          // Stop any currently playing audio
+          if (sourceNode) {
+            sourceNode.disconnect();
+          }
+          audioContext.close();
         }
-        const audioURL = URL.createObjectURL(result.file);
-        const audio = new Audio(audioURL);
-        currentAudio = audio;
 
-        // Set the audio volume before playing
-        currentAudio.volume = audioVolume;
+        // Initialize Web Audio API
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        gainNode = audioContext.createGain();
+        gainNode.gain.value = document.getElementById('volume-slider').value; // Set initial volume
 
-        audio.play()
-          .then(() => {
-            console.log(`Playing ${key}`);
-            resolve();
-          })
-          .catch((error) => reject(error));
+        // Connect gainNode to the destination
+        gainNode.connect(audioContext.destination);
+
+        // Decode and play the audio
+        const arrayBuffer = await result.file.arrayBuffer();
+        audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+          sourceNode = audioContext.createBufferSource();
+          sourceNode.buffer = buffer;
+          sourceNode.connect(gainNode); // Connect the source to gainNode
+          sourceNode.start(0);
+          currentAudio = sourceNode;
+          console.log(`Playing ${key}`);
+          resolve();
+        });
       } else {
         alert(`Audio file not available offline for key: ${key}`);
         reject(`Audio file not found for key: ${key}`);
@@ -107,9 +119,9 @@ document.getElementById('play-audio-2').addEventListener('click', () => {
 
 // Set up event listener for volume slider
 document.getElementById('volume-slider').addEventListener('input', (event) => {
-  audioVolume = event.target.value; // Update the global audio volume variable
-  if (currentAudio) {
-    currentAudio.volume = audioVolume; // Apply the new volume to the current audio
-    console.log(`Volume set to: ${audioVolume}`);
+  const volume = event.target.value;
+  if (gainNode) {
+    gainNode.gain.value = volume; // Adjust volume dynamically
+    console.log(`Volume set to: ${volume}`);
   }
 });
