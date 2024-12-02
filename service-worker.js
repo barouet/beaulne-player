@@ -1,5 +1,3 @@
-// service-worker.js
-
 const CACHE_NAME = 'beaulne-player-cache-v2';
 const ASSETS = [
     './index.html',
@@ -20,23 +18,19 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve cached files if available
 self.addEventListener('fetch', (event) => {
-    const requestUrl = new URL(event.request.url);
-
-    // Handle navigation requests by serving cached index.html
     if (event.request.mode === 'navigate') {
+        // Serve index.html for navigation requests
         event.respondWith(
             caches.match('./index.html').then((response) => {
                 return response || fetch('./index.html');
             })
         );
-        return;
-    }
-
-    // Serve audio files explicitly from cache
-    if (requestUrl.pathname.endsWith('.mp3')) {
+    } else {
+        // Handle other requests (e.g., static assets and audio files)
         event.respondWith(
             caches.match(event.request).then((response) => {
                 return response || fetch(event.request).then((fetchResponse) => {
+                    // Cache the fetched response dynamically
                     return caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, fetchResponse.clone());
                         return fetchResponse;
@@ -44,15 +38,7 @@ self.addEventListener('fetch', (event) => {
                 });
             })
         );
-        return;
     }
-
-    // Default behavior for other requests
-    event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
-    );
 });
 
 // Activate event - clear old caches
