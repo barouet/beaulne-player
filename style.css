@@ -1,6 +1,6 @@
 /* General Styles */
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   background: #000000;
   color: #ffffff;
   margin: 0;
@@ -26,6 +26,7 @@ h1 {
   margin-bottom: 20px;
   font-size: 2rem;
   color: #66b3ff;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 /* Audio Controls */
@@ -39,6 +40,7 @@ h1 {
 }
 
 .audio-btn {
+  font-family: 'Segoe UI', sans-serif;
   background: #1e90ff;
   color: white;
   padding: 20px 30px;
@@ -51,8 +53,8 @@ h1 {
 }
 
 .audio-btn.active {
-  background: #ff4444;
-  border: 2px solid #ff6666;
+  background: #7bbdff;
+  border: 2px solid #ffffff;
 }
 
 .audio-btn.active::after {
