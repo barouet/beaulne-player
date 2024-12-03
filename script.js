@@ -1,5 +1,3 @@
-
-
 // Register the Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
@@ -77,30 +75,33 @@ async function playAudioFromIndexedDB(key) {
       const result = event.target.result;
       if (result && result.file) {
         if (audioContext.state === 'suspended') {
-          await audioContext.resume(); // Ensure AudioContext is active
+          await audioContext.resume();
         }
 
         const arrayBuffer = await result.file.arrayBuffer();
         audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-          currentBuffer = buffer; // Cache the buffer
+          currentBuffer = buffer;
 
-          // Stop the previous source node if playing
           if (sourceNode) {
             sourceNode.stop();
           }
 
-          // Create new source node
           sourceNode = audioContext.createBufferSource();
           sourceNode.buffer = buffer;
 
-          // Create or reuse GainNode for volume control
+          // Add ended event listener
+          sourceNode.onended = () => {
+            document.querySelectorAll('.audio-btn').forEach(btn => {
+              btn.classList.remove('active');
+            });
+          };
+
           if (!gainNode) {
             gainNode = audioContext.createGain();
             gainNode.connect(audioContext.destination);
           }
           sourceNode.connect(gainNode);
 
-          // Start playback
           sourceNode.start(0);
           console.log(`Playing ${key}`);
           resolve();
@@ -135,17 +136,38 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Play buttons
-document.getElementById('play-audio-1').addEventListener('click', () => {
-  playAudioFromIndexedDB('audio1')
-    .catch((error) => console.error('Error playing audio1:', error));
-});
-
-document.getElementById('play-audio-2').addEventListener('click', () => {
-  playAudioFromIndexedDB('audio2')
-    .catch((error) => console.error('Error playing audio2:', error));
+document.querySelectorAll('.audio-btn').forEach(button => {
+  button.addEventListener('click', function() {
+    // Remove active class from all buttons
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    
+    // Add active class to clicked button
+    this.classList.add('active');
+    
+    // Your existing audio playing logic here
+  });
 });
 
 // Volume slider
 document.getElementById('volume-slider').addEventListener('input', (event) => {
   adjustVolume(event.target.value);
+});
+
+// Update the play buttons event listeners
+document.getElementById('play-audio-1').addEventListener('click', async function() {
+  document.querySelectorAll('.audio-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  this.classList.add('active');
+  await playAudioFromIndexedDB('audio1');
+});
+
+document.getElementById('play-audio-2').addEventListener('click', async function() {
+  document.querySelectorAll('.audio-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  this.classList.add('active');
+  await playAudioFromIndexedDB('audio2');
 });

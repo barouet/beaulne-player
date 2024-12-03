@@ -46,13 +46,17 @@ h1 {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: background-color 0.3s ease;
   width: 100%;
 }
 
 .audio-btn.active {
-  background: #1266a3;  /* Darker blue for active state */
-  border: 2px solid #66b3ff;  /* Light blue border to show active state */
+  background: #ff4444;
+  border: 2px solid #ff6666;
+}
+
+.audio-btn.active::after {
+  display: none;
 }
 
 /* Volume Control */
