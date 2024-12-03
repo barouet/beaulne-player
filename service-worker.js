@@ -1,11 +1,9 @@
-const CACHE_NAME = 'audio-player-cache-v5';
+const CACHE_NAME = 'audio-player-cache-v6';
 const assetsToCache = [
   './',
   './index.html',
   './style.css',
   './script.js',
-  './noise.mp3',
-  './mel.mp3',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
