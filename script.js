@@ -66,7 +66,7 @@ async function playAudioFromIndexedDB(key) {
 
   try {
     let buffer;
-    
+
     // Get buffer (either from cache or IndexedDB)
     if (audioBuffers.has(key)) {
       buffer = audioBuffers.get(key);
@@ -75,54 +75,20 @@ async function playAudioFromIndexedDB(key) {
       const transaction = db.transaction('audio', 'readonly');
       const store = transaction.objectStore('audio');
       const request = store.get(key);
-      
-      return new Promise((resolve, reject) => {
+
+      buffer = await new Promise((resolve, reject) => {
         request.onsuccess = async (event) => {
           const result = event.target.result;
           if (!result || !result.file) {
             reject(new Error(`Audio file not found for key: ${key}`));
             return;
           }
-          
+
           try {
             const arrayBuffer = await result.file.arrayBuffer();
-            buffer = await audioContext.decodeAudioData(arrayBuffer);
-            audioBuffers.set(key, buffer);
-            
-            // Resume context if suspended
-            if (audioContext.state === 'suspended') {
-              await audioContext.resume();
-            }
-
-            // Stop any existing playback
-            if (sourceNode && sourceNode.isPlaying) {
-              sourceNode.stop();
-              sourceNode.isPlaying = false;
-            }
-
-            // Create and configure source node
-            sourceNode = audioContext.createBufferSource();
-            sourceNode.buffer = buffer;
-            sourceNode.isPlaying = true;
-
-            // Set up gain node if needed
-            if (!gainNode) {
-              gainNode = audioContext.createGain();
-              gainNode.connect(audioContext.destination);
-            }
-            sourceNode.connect(gainNode);
-
-            // Start playback
-            sourceNode.start(0);
-            
-            sourceNode.onended = () => {
-              sourceNode.isPlaying = false;
-              document.querySelectorAll('.audio-btn').forEach(btn => {
-                btn.classList.remove('active');
-              });
-            };
-            
-            resolve();
+            const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            audioBuffers.set(key, decodedBuffer);
+            resolve(decodedBuffer);
           } catch (error) {
             reject(error);
           }
@@ -132,31 +98,27 @@ async function playAudioFromIndexedDB(key) {
       });
     }
 
-    // If using cached buffer
+    // Resume context if suspended
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
 
-    // Stop any existing playback
-    if (sourceNode && sourceNode.isPlaying) {
-      sourceNode.stop();
-      sourceNode.isPlaying = false;
-    }
-
+    // Create and configure source node
     sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = buffer;
-    sourceNode.isPlaying = true;
 
+    // Set up gain node if needed
     if (!gainNode) {
       gainNode = audioContext.createGain();
       gainNode.connect(audioContext.destination);
     }
     sourceNode.connect(gainNode);
 
+    // Start playback
     sourceNode.start(0);
-    
+
     sourceNode.onended = () => {
-      sourceNode.isPlaying = false;
+      sourceNode = null; // Clear the sourceNode when playback ends
       document.querySelectorAll('.audio-btn').forEach(btn => {
         btn.classList.remove('active');
       });
@@ -193,7 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
   openDatabase().then(db => {
     const transaction = db.transaction('audio', 'readonly');
     const store = transaction.objectStore('audio');
-    const request = store.get('audio1');  // Check for first file as indicator
+
+    // Check for the presence of the first audio file as an indicator
+    const request = store.get('audio1');
 
     request.onsuccess = (event) => {
       if (!event.target.result) {
@@ -208,6 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Audio files already in IndexedDB');
       }
     };
+
+    request.onerror = (event) => {
+      console.error('Error checking IndexedDB:', event.target.error);
+    };
   });
 });
 
@@ -215,28 +183,18 @@ document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('.audio-btn').forEach(button => {
   button.addEventListener('click', async function() {
     const audioKey = this.dataset.audio;
-    
+
     // Prevent multiple clicks while loading
     if (this.classList.contains('loading')) {
       return;
     }
-    
-    // If this button is active (playing), stop the audio
-    if (this.classList.contains('active')) {
-      if (sourceNode) {
-        sourceNode.stop();
-        sourceNode.isPlaying = false;
-      }
-      this.classList.remove('active');
-      return;
+
+    // Stop any currently playing audio
+    if (sourceNode) {
+      sourceNode.stop();
+      sourceNode = null; // Clear the sourceNode to ensure no overlap
     }
 
-    // Stop any currently playing audio and reset all buttons
-    if (sourceNode && sourceNode.isPlaying) {
-      sourceNode.stop();
-      sourceNode.isPlaying = false;
-    }
-    
     // Remove active class from all buttons
     document.querySelectorAll('.audio-btn').forEach(btn => {
       btn.classList.remove('active', 'loading');
@@ -245,14 +203,14 @@ document.querySelectorAll('.audio-btn').forEach(button => {
     try {
       // Show loading state
       this.classList.add('loading');
-      
+
       // Play the audio
       await playAudioFromIndexedDB(audioKey);
-      
+
       // Update button state
       this.classList.remove('loading');
       this.classList.add('active');
-      
+
     } catch (error) {
       console.error('Error playing audio:', error);
       this.classList.remove('loading', 'active');
