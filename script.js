@@ -10,10 +10,10 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-let audioContext = null; // Web Audio API context
-let gainNode = null; // Node to control volume
-let sourceNode = null; // Current audio source node
-let currentBuffer = null; // Cached audio buffer for the current file
+let audioContext = null;  // Web Audio API context
+let gainNode = null;     // Node to control volume
+let sourceNode = null;   // Current audio source node
+let audioBuffers = new Map();  // Cache for all decoded buffers
 
 // Initialize IndexedDB
 function openDatabase() {
@@ -64,8 +64,8 @@ async function playAudioFromIndexedDB(key) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
 
-  // If we already have the buffer cached, use it
-  if (currentBuffer) {
+  // If we already have this specific buffer cached, use it
+  if (audioBuffers.has(key)) {
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
@@ -75,7 +75,7 @@ async function playAudioFromIndexedDB(key) {
     }
 
     sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = currentBuffer;
+    sourceNode.buffer = audioBuffers.get(key);  // Get the correct cached buffer
     sourceNode.isPlaying = true;
 
     sourceNode.onended = () => {
@@ -114,7 +114,7 @@ async function playAudioFromIndexedDB(key) {
 
         const arrayBuffer = await result.file.arrayBuffer();
         audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-          currentBuffer = buffer;  // Cache the decoded buffer
+          audioBuffers.set(key, buffer);  // Cache the buffer with its key
 
           if (sourceNode) {
             sourceNode.stop();
