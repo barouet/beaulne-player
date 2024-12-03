@@ -64,6 +64,40 @@ async function playAudioFromIndexedDB(key) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
 
+  // If we already have the buffer cached, use it
+  if (currentBuffer) {
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
+    if (sourceNode) {
+      sourceNode.stop();
+    }
+
+    sourceNode = audioContext.createBufferSource();
+    sourceNode.buffer = currentBuffer;
+    sourceNode.isPlaying = true;
+
+    sourceNode.onended = () => {
+      sourceNode.isPlaying = false;
+      if (!sourceNode.isPlaying) {
+        document.querySelectorAll('.audio-btn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+      }
+    };
+
+    if (!gainNode) {
+      gainNode = audioContext.createGain();
+      gainNode.connect(audioContext.destination);
+    }
+    sourceNode.connect(gainNode);
+
+    sourceNode.start(0);
+    console.log(`Playing ${key} from cache`);
+    return;
+  }
+
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
@@ -80,10 +114,9 @@ async function playAudioFromIndexedDB(key) {
 
         const arrayBuffer = await result.file.arrayBuffer();
         audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-          currentBuffer = buffer;
+          currentBuffer = buffer;  // Cache the decoded buffer
 
           if (sourceNode) {
-            sourceNode.isPlaying = false;
             sourceNode.stop();
           }
 
@@ -107,7 +140,7 @@ async function playAudioFromIndexedDB(key) {
           sourceNode.connect(gainNode);
 
           sourceNode.start(0);
-          console.log(`Playing ${key}`);
+          console.log(`Playing ${key} from IndexedDB`);
           resolve();
         });
       } else {
