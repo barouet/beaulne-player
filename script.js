@@ -64,95 +64,63 @@ async function playAudioFromIndexedDB(key) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
 
-  // If we already have this specific buffer cached, use it
-  if (audioBuffers.has(key)) {
+  try {
+    let buffer;
+    
+    // Get buffer (either from cache or IndexedDB)
+    if (audioBuffers.has(key)) {
+      buffer = audioBuffers.get(key);
+    } else {
+      const db = await openDatabase();
+      const transaction = db.transaction('audio', 'readonly');
+      const store = transaction.objectStore('audio');
+      const result = await store.get(key);
+      
+      if (!result || !result.file) {
+        throw new Error(`Audio file not found for key: ${key}`);
+      }
+      
+      const arrayBuffer = await result.file.arrayBuffer();
+      buffer = await audioContext.decodeAudioData(arrayBuffer);
+      audioBuffers.set(key, buffer);
+    }
+
+    // Resume context if suspended
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
+    // Create and configure source node
+    sourceNode = audioContext.createBufferSource();
+    sourceNode.buffer = buffer;
+    sourceNode.isPlaying = true;
+
+    // Set up gain node if needed
+    if (!gainNode) {
+      gainNode = audioContext.createGain();
+      gainNode.connect(audioContext.destination);
+    }
+    sourceNode.connect(gainNode);
+
+    // Start playback
+    sourceNode.start(0);
+    
     return new Promise((resolve) => {
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-
-      if (sourceNode) {
-        sourceNode.stop();
-      }
-
-      sourceNode = audioContext.createBufferSource();
-      sourceNode.buffer = audioBuffers.get(key);  // Get the correct cached buffer
-      sourceNode.isPlaying = true;
-
       sourceNode.onended = () => {
         sourceNode.isPlaying = false;
-        if (!sourceNode.isPlaying) {
-          document.querySelectorAll('.audio-btn').forEach(btn => {
+        document.querySelectorAll('.audio-btn').forEach(btn => {
+          if (!sourceNode.isPlaying) {
             btn.classList.remove('active');
-          });
-        }
-      };
-
-      if (!gainNode) {
-        gainNode = audioContext.createGain();
-        gainNode.connect(audioContext.destination);
-      }
-      sourceNode.connect(gainNode);
-
-      sourceNode.start(0);
-      console.log(`Playing ${key} from cache`);
-      resolve();
-    });
-  }
-
-  const db = await openDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction('audio', 'readonly');
-    const store = transaction.objectStore('audio');
-    const request = store.get(key);
-
-    request.onsuccess = async (event) => {
-      const result = event.target.result;
-      if (result && result.file) {
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume();
-        }
-
-        const arrayBuffer = await result.file.arrayBuffer();
-        audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-          audioBuffers.set(key, buffer);  // Cache the buffer with its key
-
-          if (sourceNode) {
-            sourceNode.stop();
           }
-
-          sourceNode = audioContext.createBufferSource();
-          sourceNode.buffer = buffer;
-          sourceNode.isPlaying = true;
-
-          sourceNode.onended = () => {
-            sourceNode.isPlaying = false;
-            if (!sourceNode.isPlaying) {
-              document.querySelectorAll('.audio-btn').forEach(btn => {
-                btn.classList.remove('active');
-              });
-            }
-          };
-
-          if (!gainNode) {
-            gainNode = audioContext.createGain();
-            gainNode.connect(audioContext.destination);
-          }
-          sourceNode.connect(gainNode);
-
-          sourceNode.start(0);
-          console.log(`Playing ${key} from IndexedDB`);
-          resolve();
         });
-      } else {
-        console.error(`Audio file not found for key: ${key}`);
-        reject(`Audio file not found for key: ${key}`);
-      }
-    };
+        resolve();
+      };
+    });
 
-    request.onerror = (event) => reject(event.target.error);
-  });
+  } catch (error) {
+    console.error('Error in playAudioFromIndexedDB:', error);
+    throw error;
+  }
 }
 
 // Adjust volume dynamically
@@ -204,25 +172,31 @@ document.querySelectorAll('.audio-btn').forEach(button => {
       return;
     }
 
-    // Remove loading and active classes from all buttons first
-    document.querySelectorAll('.audio-btn').forEach(btn => {
-      btn.classList.remove('loading', 'active');
-    });
-
-    // If another audio is playing, stop it
-    if (sourceNode) {
-      sourceNode.stop();
-      sourceNode.isPlaying = false;
-    }
-
     try {
+      // Remove active class from all buttons
+      document.querySelectorAll('.audio-btn').forEach(btn => {
+        btn.classList.remove('active', 'loading');
+      });
+
+      // Stop any currently playing audio
+      if (sourceNode && sourceNode.isPlaying) {
+        sourceNode.stop();
+        sourceNode.isPlaying = false;
+      }
+
+      // Show loading state
       this.classList.add('loading');
+      
+      // Play the audio
       await playAudioFromIndexedDB(audioKey);
+      
+      // Update button state
       this.classList.remove('loading');
       this.classList.add('active');
+      
     } catch (error) {
       console.error('Error playing audio:', error);
-      this.classList.remove('loading');
+      this.classList.remove('loading', 'active');
     }
   });
 });
