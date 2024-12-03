@@ -154,6 +154,11 @@ document.querySelectorAll('.audio-btn').forEach(button => {
   button.addEventListener('click', async function() {
     const audioKey = this.dataset.audio;
     
+    // Prevent multiple clicks while loading
+    if (this.classList.contains('loading')) {
+      return;
+    }
+    
     // If this button is active (playing), stop the audio
     if (this.classList.contains('active')) {
       if (sourceNode) {
@@ -164,16 +169,16 @@ document.querySelectorAll('.audio-btn').forEach(button => {
       return;
     }
 
+    // Remove loading and active classes from all buttons first
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+      btn.classList.remove('loading', 'active');
+    });
+
     // If another audio is playing, stop it
     if (sourceNode) {
       sourceNode.stop();
       sourceNode.isPlaying = false;
     }
-    
-    // Remove active class from all buttons
-    document.querySelectorAll('.audio-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
 
     try {
       this.classList.add('loading');
