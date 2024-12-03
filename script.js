@@ -14,6 +14,7 @@ let audioContext = null;  // Web Audio API context
 let gainNode = null;     // Node to control volume
 let sourceNode = null;   // Current audio source node
 let audioBuffers = new Map();  // Cache for all decoded buffers
+let isPlaying = false;   // Global flag to track playback state
 
 // Initialize IndexedDB
 function openDatabase() {
@@ -60,17 +61,18 @@ async function saveAudioToIndexedDB(key, audioURL) {
 
 // Play audio from IndexedDB using Web Audio API
 async function playAudioFromIndexedDB(key) {
+  // Create audio context if it doesn't exist
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
 
   try {
     let buffer;
-
-    // Get buffer (either from cache or IndexedDB)
+    
     if (audioBuffers.has(key)) {
       buffer = audioBuffers.get(key);
     } else {
+      // Load from IndexedDB and cache
       const db = await openDatabase();
       const transaction = db.transaction('audio', 'readonly');
       const store = transaction.objectStore('audio');
@@ -93,7 +95,6 @@ async function playAudioFromIndexedDB(key) {
             reject(error);
           }
         };
-
         request.onerror = () => reject(request.error);
       });
     }
@@ -103,7 +104,7 @@ async function playAudioFromIndexedDB(key) {
       await audioContext.resume();
     }
 
-    // Create and configure source node
+    // Create new source node
     sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = buffer;
 
@@ -114,15 +115,17 @@ async function playAudioFromIndexedDB(key) {
     }
     sourceNode.connect(gainNode);
 
-    // Start playback
-    sourceNode.start(0);
-
+    // Handle playback end
     sourceNode.onended = () => {
-      sourceNode = null; // Clear the sourceNode when playback ends
+      sourceNode = null;
+      isPlaying = false;
       document.querySelectorAll('.audio-btn').forEach(btn => {
         btn.classList.remove('active');
       });
     };
+
+    // Start playback
+    sourceNode.start(0);
 
   } catch (error) {
     console.error('Error in playAudioFromIndexedDB:', error);
@@ -183,37 +186,43 @@ document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('.audio-btn').forEach(button => {
   button.addEventListener('click', async function() {
     const audioKey = this.dataset.audio;
-
-    // Prevent multiple clicks while loading
-    if (this.classList.contains('loading')) {
+    
+    // If this button is already active, stop the audio
+    if (this.classList.contains('active')) {
+      if (sourceNode) {
+        sourceNode.stop();
+        sourceNode = null;
+        isPlaying = false;
+      }
+      this.classList.remove('active');
       return;
     }
 
-    // Stop any currently playing audio
-    if (sourceNode) {
+    // If something else is playing, stop it
+    if (isPlaying && sourceNode) {
       sourceNode.stop();
-      sourceNode = null; // Clear the sourceNode to ensure no overlap
+      sourceNode = null;
+      isPlaying = false;
+      document.querySelectorAll('.audio-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
     }
-
-    // Remove active class from all buttons
-    document.querySelectorAll('.audio-btn').forEach(btn => {
-      btn.classList.remove('active', 'loading');
-    });
 
     try {
       // Show loading state
       this.classList.add('loading');
-
-      // Play the audio
+      
+      // Play new audio
       await playAudioFromIndexedDB(audioKey);
-
+      isPlaying = true;
+      
       // Update button state
       this.classList.remove('loading');
       this.classList.add('active');
-
     } catch (error) {
       console.error('Error playing audio:', error);
       this.classList.remove('loading', 'active');
+      isPlaying = false;
     }
   });
 });
