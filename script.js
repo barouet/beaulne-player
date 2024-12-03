@@ -1,3 +1,17 @@
+
+
+// Register the Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('./service-worker.js')
+    .then((registration) => {
+      console.log('Service Worker registered with scope:', registration.scope);
+    })
+    .catch((error) => {
+      console.error('Service Worker registration failed:', error);
+    });
+}
+
 let audioContext = null; // Web Audio API context
 let gainNode = null; // Node to control volume
 let sourceNode = null; // Current audio source node
