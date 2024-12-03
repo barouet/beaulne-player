@@ -52,9 +52,14 @@ h1 {
   width: 100%;
 }
 
+.audio-btn.loading,
 .audio-btn.active {
-  background: #7bbdff;
-  border: 2px solid #ffffff;
+  background: #ff4444;
+  border: 2px solid #ff6666;
+}
+
+.audio-btn.loading {
+  cursor: wait;
 }
 
 .audio-btn.active::after {
