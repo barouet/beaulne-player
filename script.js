@@ -94,6 +94,12 @@ async function playAudioFromIndexedDB(key) {
               await audioContext.resume();
             }
 
+            // Stop any existing playback
+            if (sourceNode && sourceNode.isPlaying) {
+              sourceNode.stop();
+              sourceNode.isPlaying = false;
+            }
+
             // Create and configure source node
             sourceNode = audioContext.createBufferSource();
             sourceNode.buffer = buffer;
@@ -131,6 +137,12 @@ async function playAudioFromIndexedDB(key) {
     // If using cached buffer
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
+    }
+
+    // Stop any existing playback
+    if (sourceNode && sourceNode.isPlaying) {
+      sourceNode.stop();
+      sourceNode.isPlaying = false;
     }
 
     sourceNode = audioContext.createBufferSource();
@@ -181,11 +193,25 @@ document.addEventListener('DOMContentLoaded', () => {
     audio8: './mel.mp3'
   };
 
-  // Save all audio files
-  Object.entries(audioFiles).forEach(([key, path]) => {
-    saveAudioToIndexedDB(key, path)
-      .then(() => console.log(`${key} saved to IndexedDB`))
-      .catch((error) => console.error(`Error saving ${key}:`, error));
+  // Check if files are already in IndexedDB before saving
+  openDatabase().then(db => {
+    const transaction = db.transaction('audio', 'readonly');
+    const store = transaction.objectStore('audio');
+    const request = store.get('audio1');  // Check for first file as indicator
+
+    request.onsuccess = (event) => {
+      if (!event.target.result) {
+        // Only save if files aren't already in IndexedDB
+        console.log('Saving audio files to IndexedDB...');
+        Object.entries(audioFiles).forEach(([key, path]) => {
+          saveAudioToIndexedDB(key, path)
+            .then(() => console.log(`${key} saved to IndexedDB`))
+            .catch((error) => console.error(`Error saving ${key}:`, error));
+        });
+      } else {
+        console.log('Audio files already in IndexedDB');
+      }
+    };
   });
 });
 
@@ -210,16 +236,16 @@ document.querySelectorAll('.audio-btn').forEach(button => {
     }
 
     try {
-      // Remove active class from all buttons
-      document.querySelectorAll('.audio-btn').forEach(btn => {
-        btn.classList.remove('active', 'loading');
-      });
-
-      // Stop any currently playing audio
+      // Stop any currently playing audio and reset all buttons
       if (sourceNode && sourceNode.isPlaying) {
         sourceNode.stop();
         sourceNode.isPlaying = false;
       }
+      
+      // Remove active class from all buttons
+      document.querySelectorAll('.audio-btn').forEach(btn => {
+        btn.classList.remove('active', 'loading');
+      });
 
       // Show loading state
       this.classList.add('loading');
