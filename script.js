@@ -83,17 +83,21 @@ async function playAudioFromIndexedDB(key) {
           currentBuffer = buffer;
 
           if (sourceNode) {
+            sourceNode.isPlaying = false;
             sourceNode.stop();
           }
 
           sourceNode = audioContext.createBufferSource();
           sourceNode.buffer = buffer;
+          sourceNode.isPlaying = true;
 
-          // Add ended event listener
           sourceNode.onended = () => {
-            document.querySelectorAll('.audio-btn').forEach(btn => {
-              btn.classList.remove('active');
-            });
+            sourceNode.isPlaying = false;
+            if (!sourceNode.isPlaying) {
+              document.querySelectorAll('.audio-btn').forEach(btn => {
+                btn.classList.remove('active');
+              });
+            }
           };
 
           if (!gainNode) {
@@ -157,17 +161,41 @@ document.getElementById('volume-slider').addEventListener('input', (event) => {
 
 // Update the play buttons event listeners
 document.getElementById('play-audio-1').addEventListener('click', async function() {
-  document.querySelectorAll('.audio-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  this.classList.add('active');
-  await playAudioFromIndexedDB('audio1');
+  const wasPlaying = sourceNode && sourceNode.isPlaying;
+  
+  try {
+    this.classList.add('loading');
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+      if (!wasPlaying) {
+        btn.classList.remove('active');
+      }
+    });
+    
+    await playAudioFromIndexedDB('audio1');
+    this.classList.remove('loading');
+    this.classList.add('active');
+  } catch (error) {
+    console.error('Error playing audio:', error);
+    this.classList.remove('loading');
+  }
 });
 
 document.getElementById('play-audio-2').addEventListener('click', async function() {
-  document.querySelectorAll('.audio-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  this.classList.add('active');
-  await playAudioFromIndexedDB('audio2');
+  const wasPlaying = sourceNode && sourceNode.isPlaying;
+  
+  try {
+    this.classList.add('loading');
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+      if (!wasPlaying) {
+        btn.classList.remove('active');
+      }
+    });
+    
+    await playAudioFromIndexedDB('audio2');
+    this.classList.remove('loading');
+    this.classList.add('active');
+  } catch (error) {
+    console.error('Error playing audio:', error);
+    this.classList.remove('loading');
+  }
 });
