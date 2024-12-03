@@ -74,48 +74,85 @@ async function playAudioFromIndexedDB(key) {
       const db = await openDatabase();
       const transaction = db.transaction('audio', 'readonly');
       const store = transaction.objectStore('audio');
-      const result = await store.get(key);
+      const request = store.get(key);
       
-      if (!result || !result.file) {
-        throw new Error(`Audio file not found for key: ${key}`);
-      }
-      
-      const arrayBuffer = await result.file.arrayBuffer();
-      buffer = await audioContext.decodeAudioData(arrayBuffer);
-      audioBuffers.set(key, buffer);
+      return new Promise((resolve, reject) => {
+        request.onsuccess = async (event) => {
+          const result = event.target.result;
+          if (!result || !result.file) {
+            reject(new Error(`Audio file not found for key: ${key}`));
+            return;
+          }
+          
+          try {
+            const arrayBuffer = await result.file.arrayBuffer();
+            buffer = await audioContext.decodeAudioData(arrayBuffer);
+            audioBuffers.set(key, buffer);
+            
+            // Resume context if suspended
+            if (audioContext.state === 'suspended') {
+              await audioContext.resume();
+            }
+
+            // Create and configure source node
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = buffer;
+            sourceNode.isPlaying = true;
+
+            // Set up gain node if needed
+            if (!gainNode) {
+              gainNode = audioContext.createGain();
+              gainNode.connect(audioContext.destination);
+            }
+            sourceNode.connect(gainNode);
+
+            // Start playback
+            sourceNode.start(0);
+            
+            sourceNode.onended = () => {
+              sourceNode.isPlaying = false;
+              document.querySelectorAll('.audio-btn').forEach(btn => {
+                if (!sourceNode.isPlaying) {
+                  btn.classList.remove('active');
+                }
+              });
+            };
+            
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        request.onerror = () => reject(request.error);
+      });
     }
 
-    // Resume context if suspended
+    // If using cached buffer
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
 
-    // Create and configure source node
     sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = buffer;
     sourceNode.isPlaying = true;
 
-    // Set up gain node if needed
     if (!gainNode) {
       gainNode = audioContext.createGain();
       gainNode.connect(audioContext.destination);
     }
     sourceNode.connect(gainNode);
 
-    // Start playback
     sourceNode.start(0);
     
-    return new Promise((resolve) => {
-      sourceNode.onended = () => {
-        sourceNode.isPlaying = false;
-        document.querySelectorAll('.audio-btn').forEach(btn => {
-          if (!sourceNode.isPlaying) {
-            btn.classList.remove('active');
-          }
-        });
-        resolve();
-      };
-    });
+    sourceNode.onended = () => {
+      sourceNode.isPlaying = false;
+      document.querySelectorAll('.audio-btn').forEach(btn => {
+        if (!sourceNode.isPlaying) {
+          btn.classList.remove('active');
+        }
+      });
+    };
 
   } catch (error) {
     console.error('Error in playAudioFromIndexedDB:', error);
