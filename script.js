@@ -66,36 +66,38 @@ async function playAudioFromIndexedDB(key) {
 
   // If we already have this specific buffer cached, use it
   if (audioBuffers.has(key)) {
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-
-    if (sourceNode) {
-      sourceNode.stop();
-    }
-
-    sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = audioBuffers.get(key);  // Get the correct cached buffer
-    sourceNode.isPlaying = true;
-
-    sourceNode.onended = () => {
-      sourceNode.isPlaying = false;
-      if (!sourceNode.isPlaying) {
-        document.querySelectorAll('.audio-btn').forEach(btn => {
-          btn.classList.remove('active');
-        });
+    return new Promise((resolve) => {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
       }
-    };
 
-    if (!gainNode) {
-      gainNode = audioContext.createGain();
-      gainNode.connect(audioContext.destination);
-    }
-    sourceNode.connect(gainNode);
+      if (sourceNode) {
+        sourceNode.stop();
+      }
 
-    sourceNode.start(0);
-    console.log(`Playing ${key} from cache`);
-    return;
+      sourceNode = audioContext.createBufferSource();
+      sourceNode.buffer = audioBuffers.get(key);  // Get the correct cached buffer
+      sourceNode.isPlaying = true;
+
+      sourceNode.onended = () => {
+        sourceNode.isPlaying = false;
+        if (!sourceNode.isPlaying) {
+          document.querySelectorAll('.audio-btn').forEach(btn => {
+            btn.classList.remove('active');
+          });
+        }
+      };
+
+      if (!gainNode) {
+        gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+      }
+      sourceNode.connect(gainNode);
+
+      sourceNode.start(0);
+      console.log(`Playing ${key} from cache`);
+      resolve();
+    });
   }
 
   const db = await openDatabase();
