@@ -118,9 +118,7 @@ async function playAudioFromIndexedDB(key) {
             sourceNode.onended = () => {
               sourceNode.isPlaying = false;
               document.querySelectorAll('.audio-btn').forEach(btn => {
-                if (!sourceNode.isPlaying) {
-                  btn.classList.remove('active');
-                }
+                btn.classList.remove('active');
               });
             };
             
@@ -160,9 +158,7 @@ async function playAudioFromIndexedDB(key) {
     sourceNode.onended = () => {
       sourceNode.isPlaying = false;
       document.querySelectorAll('.audio-btn').forEach(btn => {
-        if (!sourceNode.isPlaying) {
-          btn.classList.remove('active');
-        }
+        btn.classList.remove('active');
       });
     };
 
@@ -235,18 +231,18 @@ document.querySelectorAll('.audio-btn').forEach(button => {
       return;
     }
 
-    try {
-      // Stop any currently playing audio and reset all buttons
-      if (sourceNode && sourceNode.isPlaying) {
-        sourceNode.stop();
-        sourceNode.isPlaying = false;
-      }
-      
-      // Remove active class from all buttons
-      document.querySelectorAll('.audio-btn').forEach(btn => {
-        btn.classList.remove('active', 'loading');
-      });
+    // Stop any currently playing audio and reset all buttons
+    if (sourceNode && sourceNode.isPlaying) {
+      sourceNode.stop();
+      sourceNode.isPlaying = false;
+    }
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+      btn.classList.remove('active', 'loading');
+    });
 
+    try {
       // Show loading state
       this.classList.add('loading');
       
