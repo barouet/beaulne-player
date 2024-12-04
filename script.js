@@ -147,8 +147,17 @@ async function playAudioFromIndexedDB(key) {
     }
     sourceNode.connect(gainNode);
 
+    const buttonIndex = currentPlayingIndex;  // Store the index when creating the handler
     sourceNode.onended = () => {
-      stopAudio();
+      if (sourceNode) {
+        sourceNode.stop();
+        sourceNode = null;
+      }
+      
+      // Only remove active class from the button that started this audio
+      if (buttonIndex !== -1) {
+        audioButtons[buttonIndex].classList.remove('active');
+      }
     };
 
     sourceNode.start(0);
@@ -160,7 +169,6 @@ async function playAudioFromIndexedDB(key) {
     throw error;
   }
 }
-
 // Adjust volume dynamically
 function adjustVolume(value) {
   if (gainNode) {
@@ -228,12 +236,12 @@ audioButtons.forEach((button, index) => {
     stopAudio();
 
     try {
-      // Show loading state
+      // Update currentPlayingIndex and show loading state immediately
+      currentPlayingIndex = index;
       this.classList.add('loading');
 
       // Play new audio
       await playAudioFromIndexedDB(this.dataset.audio);
-      currentPlayingIndex = index;
 
       // Update button state
       this.classList.remove('loading');
@@ -253,8 +261,8 @@ function stopAudio() {
   }
   if (currentPlayingIndex !== -1) {
     audioButtons[currentPlayingIndex].classList.remove('active');
+    currentPlayingIndex = -1;
   }
-  currentPlayingIndex = -1;
 }
 
 // Volume slider
@@ -270,3 +278,4 @@ if (resumeButton) {
     resumeButton.style.display = 'none';
   });
 }
+
