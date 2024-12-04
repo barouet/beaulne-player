@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Audio Player</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
@@ -23,8 +23,8 @@
     <div class="volume-control">
       <label for="volume-slider">Volume:</label>
       <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+      <button id="resume-audio" style="display: none;">Tap to Resume Audio</button>
     </div>
-    <button id="resume-audio" style="display: none;">Tap to Resume Audio</button>
   </div>
   <script src="script.js"></script>
 </body>

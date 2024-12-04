@@ -14,7 +14,7 @@ let audioContext = null;  // Web Audio API context
 let gainNode = null;     // Node to control volume
 let sourceNode = null;   // Current audio source node
 let audioBuffers = new Map();  // Cache for all decoded buffers
-let isPlaying = false;   // Global flag to track playback state
+let currentPlayingIndex = -1;  // Index of the currently playing audio, -1 means none
 
 // Add these event listeners at the top level of your script
 document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -98,20 +98,16 @@ async function saveAudioToIndexedDB(key, audioURL) {
 
 // Play audio from IndexedDB using Web Audio API
 async function playAudioFromIndexedDB(key) {
-  try {
-    // Create or resume audio context
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    } else if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
 
+  try {
     let buffer;
-    
+
     if (audioBuffers.has(key)) {
       buffer = audioBuffers.get(key);
     } else {
-      // Load from IndexedDB and cache
       const db = await openDatabase();
       const transaction = db.transaction('audio', 'readonly');
       const store = transaction.objectStore('audio');
@@ -138,32 +134,23 @@ async function playAudioFromIndexedDB(key) {
       });
     }
 
-    // Resume context if suspended
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
 
-    // Create new source node
     sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = buffer;
 
-    // Set up gain node if needed
     if (!gainNode) {
       gainNode = audioContext.createGain();
       gainNode.connect(audioContext.destination);
     }
     sourceNode.connect(gainNode);
 
-    // Handle playback end
     sourceNode.onended = () => {
-      sourceNode = null;
-      isPlaying = false;
-      document.querySelectorAll('.audio-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
+      stopAudio();
     };
 
-    // Start playback
     sourceNode.start(0);
 
   } catch (error) {
@@ -223,50 +210,52 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Get all audio buttons
+const audioButtons = Array.from(document.querySelectorAll('.audio-btn'));
+
 // Single event handler for all audio buttons
-document.querySelectorAll('.audio-btn').forEach(button => {
+audioButtons.forEach((button, index) => {
   button.addEventListener('click', async function() {
-    const audioKey = this.dataset.audio;
-    
     // If this button is already active, stop the audio
-    if (this.classList.contains('active')) {
-      if (sourceNode) {
-        sourceNode.stop();
-        sourceNode = null;
-        isPlaying = false;
-      }
+    if (currentPlayingIndex === index) {
+      stopAudio();
       this.classList.remove('active');
+      currentPlayingIndex = -1;
       return;
     }
 
-    // If something else is playing, stop it
-    if (isPlaying && sourceNode) {
-      sourceNode.stop();
-      sourceNode = null;
-      isPlaying = false;
-      document.querySelectorAll('.audio-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-    }
+    // Stop any currently playing audio
+    stopAudio();
 
     try {
       // Show loading state
       this.classList.add('loading');
-      
+
       // Play new audio
-      await playAudioFromIndexedDB(audioKey);
-      isPlaying = true;
-      
+      await playAudioFromIndexedDB(this.dataset.audio);
+      currentPlayingIndex = index;
+
       // Update button state
       this.classList.remove('loading');
       this.classList.add('active');
     } catch (error) {
       console.error('Error playing audio:', error);
       this.classList.remove('loading', 'active');
-      isPlaying = false;
+      currentPlayingIndex = -1;
     }
   });
 });
+
+function stopAudio() {
+  if (sourceNode) {
+    sourceNode.stop();
+    sourceNode = null;
+  }
+  if (currentPlayingIndex !== -1) {
+    audioButtons[currentPlayingIndex].classList.remove('active');
+  }
+  currentPlayingIndex = -1;
+}
 
 // Volume slider
 document.getElementById('volume-slider').addEventListener('input', (event) => {
