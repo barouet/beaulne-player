@@ -86,7 +86,6 @@ async function saveAudioToIndexedDB(key, audioURL) {
         store.put({ name: key, file: blob });
 
         transaction.oncomplete = () => {
-          console.log(`${key} saved to IndexedDB`);
           resolve();
         };
 
@@ -97,13 +96,20 @@ async function saveAudioToIndexedDB(key, audioURL) {
 }
 
 // Play audio from IndexedDB using Web Audio API
-async function playAudioFromIndexedDB(key) {
+async function playAudioFromIndexedDB(key, expectedIndex) {
+  console.log('playAudioFromIndexedDB called with key:', key, 'and expectedIndex:', expectedIndex);
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
 
   try {
     let buffer;
+
+    // Check if the index is still valid before proceeding
+    if (currentPlayingIndex !== expectedIndex) {
+      throw new Error('Another button was clicked');
+      console.log('Another button was clicked');
+    }
 
     if (audioBuffers.has(key)) {
       buffer = audioBuffers.get(key);
@@ -115,6 +121,12 @@ async function playAudioFromIndexedDB(key) {
 
       buffer = await new Promise((resolve, reject) => {
         request.onsuccess = async (event) => {
+          // Check again if the index is still valid
+          if (currentPlayingIndex !== expectedIndex) {
+            reject(new Error('Another button was clicked'));
+            return;
+          }
+
           const result = event.target.result;
           if (!result || !result.file) {
             reject(new Error(`Audio file not found for key: ${key}`));
@@ -134,6 +146,11 @@ async function playAudioFromIndexedDB(key) {
       });
     }
 
+    // Final check before playing
+    if (currentPlayingIndex !== expectedIndex) {
+      throw new Error('Another button was clicked');
+    }
+
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
@@ -143,20 +160,28 @@ async function playAudioFromIndexedDB(key) {
 
     if (!gainNode) {
       gainNode = audioContext.createGain();
+      // Set initial volume based on slider value
+      const volumeSlider = document.getElementById('volume-slider');
+      if (volumeSlider) {
+        gainNode.gain.value = volumeSlider.value;
+      }
       gainNode.connect(audioContext.destination);
     }
     sourceNode.connect(gainNode);
 
-    const buttonIndex = currentPlayingIndex;  // Store the index when creating the handler
+    const buttonIndex = expectedIndex;  // Use the expected index
     sourceNode.onended = () => {
-      if (sourceNode) {
-        sourceNode.stop();
-        sourceNode = null;
-      }
-      
-      // Only remove active class from the button that started this audio
-      if (buttonIndex !== -1) {
+      console.log('Audio ended');
+      // Check if the currentPlayingIndex matches the expectedIndex
+      if (currentPlayingIndex === expectedIndex) {
+        if (sourceNode) {
+          sourceNode.stop();
+          sourceNode = null;
+        }
+        // Only remove active class from the button that started this audio
         audioButtons[buttonIndex].classList.remove('active');
+        // Reset currentPlayingIndex
+        currentPlayingIndex = -1;
       }
     };
 
@@ -164,8 +189,6 @@ async function playAudioFromIndexedDB(key) {
 
   } catch (error) {
     console.error('Error in playAudioFromIndexedDB:', error);
-    // If there's an error, try recreating the audio context
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
     throw error;
   }
 }
@@ -176,6 +199,7 @@ function adjustVolume(value) {
     console.log(`Volume adjusted to: ${value}`);
   }
 }
+
 
 // Save all audio files to IndexedDB on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -224,26 +248,23 @@ const audioButtons = Array.from(document.querySelectorAll('.audio-btn'));
 // Single event handler for all audio buttons
 audioButtons.forEach((button, index) => {
   button.addEventListener('click', async function() {
-    // If this button is already active, stop the audio
+    console.log('Button clicked with index:', index);
+    console.log('currentPlayingIndex:', currentPlayingIndex);
     if (currentPlayingIndex === index) {
-      stopAudio();
-      this.classList.remove('active');
+      stopAllAudio();
       currentPlayingIndex = -1;
       return;
     }
 
-    // Stop any currently playing audio
-    stopAudio();
+    stopAllAudio();
 
     try {
-      // Update currentPlayingIndex and show loading state immediately
       currentPlayingIndex = index;
       this.classList.add('loading');
 
-      // Play new audio
-      await playAudioFromIndexedDB(this.dataset.audio);
+      // Pass the index to playAudioFromIndexedDB
+      await playAudioFromIndexedDB(this.dataset.audio, index);
 
-      // Update button state
       this.classList.remove('loading');
       this.classList.add('active');
     } catch (error) {
@@ -254,15 +275,18 @@ audioButtons.forEach((button, index) => {
   });
 });
 
-function stopAudio() {
+//Stop all audio
+function stopAllAudio() {
   if (sourceNode) {
     sourceNode.stop();
+    sourceNode.disconnect();
     sourceNode = null;
   }
-  if (currentPlayingIndex !== -1) {
-    audioButtons[currentPlayingIndex].classList.remove('active');
-    currentPlayingIndex = -1;
-  }
+  // Reset all buttons to inactive state
+  audioButtons.forEach(button => {
+    button.classList.remove('active', 'loading');
+  });
+  // Reset playing index
 }
 
 // Volume slider
