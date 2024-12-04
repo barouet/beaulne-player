@@ -16,6 +16,43 @@ let sourceNode = null;   // Current audio source node
 let audioBuffers = new Map();  // Cache for all decoded buffers
 let isPlaying = false;   // Global flag to track playback state
 
+// Add these event listeners at the top level of your script
+document.addEventListener('visibilitychange', handleVisibilityChange);
+window.addEventListener('focus', handleFocus);
+window.addEventListener('resume', handleResume);  // For PWA specific events
+
+// Handle visibility changes
+async function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    await resumeAudioContext();
+  }
+}
+
+// Handle window focus
+async function handleFocus() {
+  await resumeAudioContext();
+}
+
+// Handle PWA resume
+async function handleResume() {
+  await resumeAudioContext();
+}
+
+// Function to resume audio context
+async function resumeAudioContext() {
+  if (audioContext && audioContext.state === 'suspended') {
+    try {
+      await audioContext.resume();
+      console.log('AudioContext resumed successfully');
+      if (resumeButton) resumeButton.style.display = 'none';
+    } catch (error) {
+      console.error('Failed to resume AudioContext:', error);
+      if (resumeButton) resumeButton.style.display = 'block';
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+}
+
 // Initialize IndexedDB
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -61,12 +98,14 @@ async function saveAudioToIndexedDB(key, audioURL) {
 
 // Play audio from IndexedDB using Web Audio API
 async function playAudioFromIndexedDB(key) {
-  // Create audio context if it doesn't exist
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-
   try {
+    // Create or resume audio context
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
     let buffer;
     
     if (audioBuffers.has(key)) {
@@ -129,6 +168,8 @@ async function playAudioFromIndexedDB(key) {
 
   } catch (error) {
     console.error('Error in playAudioFromIndexedDB:', error);
+    // If there's an error, try recreating the audio context
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
     throw error;
   }
 }
@@ -231,3 +272,12 @@ document.querySelectorAll('.audio-btn').forEach(button => {
 document.getElementById('volume-slider').addEventListener('input', (event) => {
   adjustVolume(event.target.value);
 });
+
+// Add this to your script
+const resumeButton = document.getElementById('resume-audio');
+if (resumeButton) {
+  resumeButton.addEventListener('click', async () => {
+    await resumeAudioContext();
+    resumeButton.style.display = 'none';
+  });
+}
