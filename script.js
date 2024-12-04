@@ -112,8 +112,11 @@ async function playAudioFromIndexedDB(key, expectedIndex) {
     }
 
     if (audioBuffers.has(key)) {
+      console.log(`Using cached buffer for ${key}`);
       buffer = audioBuffers.get(key);
     } else {
+      console.log(audioBuffers);
+      console.log(`Loading and decoding ${key} from IndexedDB`);
       const db = await openDatabase();
       const transaction = db.transaction('audio', 'readonly');
       const store = transaction.objectStore('audio');
@@ -200,9 +203,7 @@ function adjustVolume(value) {
   }
 }
 
-
-// Save all audio files to IndexedDB on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const audioFiles = {
     audio1: './noise.mp3',
     audio2: './mel.mp3',
@@ -214,32 +215,59 @@ document.addEventListener('DOMContentLoaded', () => {
     audio8: './mel.mp3'
   };
 
-  // Check if files are already in IndexedDB before saving
-  openDatabase().then(db => {
-    const transaction = db.transaction('audio', 'readonly');
-    const store = transaction.objectStore('audio');
+  // First check if files are in IndexedDB
+  const db = await openDatabase();
+  const transaction = db.transaction('audio', 'readonly');
+  const store = transaction.objectStore('audio');
+  const request = store.get('audio1');
 
-    // Check for the presence of the first audio file as an indicator
-    const request = store.get('audio1');
-
-    request.onsuccess = (event) => {
-      if (!event.target.result) {
-        // Only save if files aren't already in IndexedDB
-        console.log('Saving audio files to IndexedDB...');
-        Object.entries(audioFiles).forEach(([key, path]) => {
-          saveAudioToIndexedDB(key, path)
-            .then(() => console.log(`${key} saved to IndexedDB`))
-            .catch((error) => console.error(`Error saving ${key}:`, error));
-        });
-      } else {
-        console.log('Audio files already in IndexedDB');
+  request.onsuccess = async (event) => {
+    if (!event.target.result) {
+      // Save files to IndexedDB if not present
+      console.log('Saving audio files to IndexedDB...');
+      for (const [key, path] of Object.entries(audioFiles)) {
+        try {
+          await saveAudioToIndexedDB(key, path);
+          console.log(`${key} saved to IndexedDB`);
+        } catch (error) {
+          console.error(`Error saving ${key}:`, error);
+        }
       }
-    };
+    }
 
-    request.onerror = (event) => {
-      console.error('Error checking IndexedDB:', event.target.error);
-    };
-  });
+    // Initialize AudioContext and cache all buffers
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    console.log('Starting to cache audio buffers...');
+    const db = await openDatabase();  // Get fresh database connection
+    
+    for (const key of Object.keys(audioFiles)) {
+      try {
+        if (!audioBuffers.has(key)) {
+          const transaction = db.transaction('audio', 'readonly');
+          const store = transaction.objectStore('audio');
+          const request = store.get(key);
+          
+          const audioData = await new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+
+          if (audioData && audioData.file) {
+            const arrayBuffer = await audioData.file.arrayBuffer();
+            const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            audioBuffers.set(key, decodedBuffer);
+            console.log(`${key} cached successfully`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error caching ${key}:`, error);
+      }
+    }
+    console.log('Audio caching complete');
+  };
 });
 
 // Get all audio buttons

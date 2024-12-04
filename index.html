@@ -3,14 +3,14 @@
 <head>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Audio Player</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <div class="container">
-    <h1>Podcast du musée Beaulne v0.66</h1>
+    <h1>Podcast du musée Beaulne v0.67</h1>
     <div class="audio-controls">
       <button id="play-audio-1" class="audio-btn" data-audio="audio1">Première partie</button>
       <button id="play-audio-2" class="audio-btn" data-audio="audio2">Deuxième partie</button>
@@ -23,7 +23,7 @@
     </div>
     <div class="volume-control">
       <i class="fas fa-volume-up volume-icon"></i>
-      <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+      <input type="range" id="volume-slider" min="0.3" max="1" step="0.1" value="0.5">
       <button id="resume-audio" style="display: none;">Tap to Resume Audio</button>
     </div>
   </div>
