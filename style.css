@@ -4,17 +4,29 @@ body, html {
   background: #000000;
   color: #ffffff;
   margin: 0;
-  padding: 20px;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+  /* Prevent bounce/scroll on iOS */
+  position: fixed;
+  overflow: hidden;
 }
 
 .container {
-  width: 100%;
-  max-width: 600px;
+  /* Use full viewport height */
+  height: 100vh;
+ /* Account for iOS safe areas */
+  height: -webkit-fill-available;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* Prevent overflow */
+  box-sizing: border-box;
   background: #2d2d2d;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
