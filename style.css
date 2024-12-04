@@ -21,7 +21,7 @@ body, html {
   width: 100%;  /* Make it full width */
  /* Account for iOS safe areas */
   height: -webkit-fill-available;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: 20px;
   /* Layout */
   display: flex;
   flex-direction: column;
@@ -72,6 +72,15 @@ h1 {
   min-height: min(5vh, 50px);
   align-items: center;
   justify-content: center;
+   /* Improved text centering */
+   display: flex;
+   align-items: center;      /* Vertical centering */
+   justify-content: center;  /* Horizontal centering */
+     /* Ensure single line text */
+  white-space: nowrap;
+  /* Optional: prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .audio-btn.loading,
