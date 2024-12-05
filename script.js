@@ -203,6 +203,10 @@ function adjustVolume(value) {
   }
 }
 
+//
+// DOMContentLoaded
+//
+
 document.addEventListener('DOMContentLoaded', async () => {
   const audioFiles = {
     audio1: './noise.mp3',
@@ -214,43 +218,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     audio7: './noise.mp3',
     audio8: './mel.mp3'
   };
+  const buttons = document.querySelectorAll('.audio-btn');
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  });
 
-  // First check if files are in IndexedDB
-  const db = await openDatabase();
-  const transaction = db.transaction('audio', 'readonly');
-  const store = transaction.objectStore('audio');
-  const request = store.get('audio1');
+  try {
+    // First ensure files are in IndexedDB
+    const db = await openDatabase();
+    const transaction = db.transaction('audio', 'readonly');
+    const store = transaction.objectStore('audio');
+    const request = store.get('audio1');
 
-  request.onsuccess = async (event) => {
-    if (!event.target.result) {
-      // Save files to IndexedDB if not present
-      console.log('Saving audio files to IndexedDB...');
-      for (const [key, path] of Object.entries(audioFiles)) {
-        try {
-          await saveAudioToIndexedDB(key, path);
-          console.log(`${key} saved to IndexedDB`);
-        } catch (error) {
-          console.error(`Error saving ${key}:`, error);
+    await new Promise((resolve, reject) => {
+      request.onsuccess = async (event) => {
+        if (!event.target.result) {
+          console.log('Saving audio files to IndexedDB...');
+          for (const [key, path] of Object.entries(audioFiles)) {
+            try {
+              await saveAudioToIndexedDB(key, path);
+              console.log(`${key} saved to IndexedDB`);
+            } catch (error) {
+              console.error(`Error saving ${key}:`, error);
+              reject(error);
+              return;
+            }
+          }
         }
-      }
-    }
+        resolve();
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
 
-    // Initialize AudioContext and cache all buffers
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
+    // Now cache all audio buffers
     console.log('Starting to cache audio buffers...');
-    const db = await openDatabase();  // Get fresh database connection
-    
-    for (const key of Object.keys(audioFiles)) {
+
+    // Wait for all buffers to be cached
+    await Promise.all(Object.keys(audioFiles).map(async (key) => {
       try {
         if (!audioBuffers.has(key)) {
-          const transaction = db.transaction('audio', 'readonly');
-          const store = transaction.objectStore('audio');
-          const request = store.get(key);
-          
+          const newDb = await openDatabase();  // Fresh connection for each operation
+          const newTransaction = newDb.transaction('audio', 'readonly');
+          const newStore = newTransaction.objectStore('audio');
           const audioData = await new Promise((resolve, reject) => {
+            const request = newStore.get(key);
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
           });
@@ -264,10 +276,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       } catch (error) {
         console.error(`Error caching ${key}:`, error);
+        throw error;  // Propagate error to Promise.all
       }
-    }
+    }));
+
     console.log('Audio caching complete');
-  };
+    
+    // Only enable buttons after ALL caching is complete
+    buttons.forEach(btn => {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
+
+  } catch (error) {
+    console.error('Error during initialization:', error);
+    // Show error to user
+  }
 });
 
 // Get all audio buttons
@@ -303,7 +327,7 @@ audioButtons.forEach((button, index) => {
   });
 });
 
-//Stop all audio
+//Stop current audio
 function stopAllAudio() {
   if (sourceNode) {
     sourceNode.stop();
