@@ -6,7 +6,7 @@ const assetsToCache = [
   './script.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './mb_icon.png'
 ];
 
 // Install event: Cache assets
