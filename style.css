@@ -15,7 +15,7 @@ body, html {
 .container {
   height: 100vh;
   width: 100%;
-  padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;  /* Safe area padding */
+  padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -29,7 +29,7 @@ body, html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;  /* Reduce margin */
+  margin-bottom: 10px;
   flex-shrink: 0;
   padding: 0 20px;
 }
@@ -62,13 +62,13 @@ h1 {
 .audio-controls {
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;  /* Distribute space evenly */
+  justify-content: space-between;  /* Distribute space evenly */
   flex: 1;
   width: 100%;
   padding: 0 20px;
   box-sizing: border-box;
-  overflow: hidden;
-  gap: 10px;
+  gap: 8px;  /* Reduced gap */
+  overflow: hidden;  /* Prevent scrolling */
 }
 
 .audio-item {
@@ -76,17 +76,17 @@ h1 {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 10px 20px;
+  padding: 8px 15px;  /* Reduced padding */
   border: 1px solid #161616;
   border-radius: 10px;
   background: #242424;
   box-sizing: border-box;
-  min-height: 60px;
+  min-height: 45px;  /* Reduced height */
 }
 
 .audio-text {
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.1rem;  /* Slightly smaller font */
   flex-grow: 1;
   text-align: left;
   margin-right: 10px;
@@ -96,8 +96,8 @@ h1 {
 }
 
 .play-btn {
-  width: 50px;
-  height: 50px;
+  width: 40px;     /* Slightly smaller button */
+  height: 40px;    /* Slightly smaller button */
   border-radius: 50%;
   background: #ffffff;
   border: none;
@@ -105,7 +105,7 @@ h1 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-left: 20px;
+  margin-left: 15px;
   flex-shrink: 0;
 }
 
@@ -117,11 +117,13 @@ h1 {
 
 /* Volume Control */
 .volume-control {
-  margin-top: 10px;  /* Reduce margin */
+  margin-top: 10px;
+  padding-bottom: env(safe-area-inset-bottom);
   flex-shrink: 0;
-  padding-bottom: 10px;  /* Reduce padding */
-  position: relative;
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 
 .volume-icon {
