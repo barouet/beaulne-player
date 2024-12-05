@@ -4,8 +4,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <!-- Deprecated but might need later for iOS full-screen -->
-  <!-- <meta name="apple-mobile-web-app-capable" content="yes"> -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Audio Player</title>
@@ -14,16 +13,59 @@
 </head>
 <body>
   <div class="container">
-    <h1>Podcast du musée Beaulne v0.68</h1>
+    <header class="header">
+      <h1>Podcast du musée Beaulne v0.71</h1>
+      <img src="mb_icon.png" alt="MB Icon" class="mb-icon">
+    </header>
     <div class="audio-controls">
-      <button id="play-audio-1" class="audio-btn" data-audio="audio1">Première partie</button>
-      <button id="play-audio-2" class="audio-btn" data-audio="audio2">Deuxième partie</button>
-      <button id="play-audio-3" class="audio-btn" data-audio="audio3">Troisième partie</button>
-      <button id="play-audio-4" class="audio-btn" data-audio="audio4">Quatrième partie</button>
-      <button id="play-audio-5" class="audio-btn" data-audio="audio5">Cinquième partie</button>
-      <button id="play-audio-6" class="audio-btn" data-audio="audio6">Sixième partie</button>
-      <button id="play-audio-7" class="audio-btn" data-audio="audio7">Septième partie</button>
-      <button id="play-audio-8" class="audio-btn" data-audio="audio8">Huitième partie</button>
+      <div class="audio-item" data-audio="audio1">
+        <span class="audio-text">Première partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio2">
+        <span class="audio-text">Deuxième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio3">
+        <span class="audio-text">Troisième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio4">
+        <span class="audio-text">Quatrième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio5">
+        <span class="audio-text">Cinquième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio6">
+        <span class="audio-text">Sixième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio7">
+        <span class="audio-text">Septième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+      <div class="audio-item" data-audio="audio8">
+        <span class="audio-text">Huitième partie</span>
+        <button class="play-btn">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
     </div>
     <div class="volume-control">
       <i class="fas fa-volume-up volume-icon"></i>

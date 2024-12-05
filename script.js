@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     audio7: './noise.mp3',
     audio8: './mel.mp3'
   };
-  const buttons = document.querySelectorAll('.audio-btn');
+  const buttons = document.querySelectorAll('.play-btn');
   buttons.forEach(btn => {
     btn.disabled = true;
     btn.style.opacity = '0.5';
@@ -253,6 +253,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Now cache all audio buffers
     console.log('Starting to cache audio buffers...');
+    
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
 
     // Wait for all buffers to be cached
     await Promise.all(Object.keys(audioFiles).map(async (key) => {
@@ -294,14 +298,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Get all audio buttons
-const audioButtons = Array.from(document.querySelectorAll('.audio-btn'));
+// Update button selection to use new structure
+const audioButtons = Array.from(document.querySelectorAll('.audio-item'));
 
-// Single event handler for all audio buttons
-audioButtons.forEach((button, index) => {
-  button.addEventListener('click', async function() {
+// Update button event listeners
+audioButtons.forEach((item, index) => {
+  const playBtn = item.querySelector('.play-btn');
+  const playIcon = playBtn.querySelector('i');
+  
+  playBtn.addEventListener('click', async function() {
     console.log('Button clicked with index:', index);
     console.log('currentPlayingIndex:', currentPlayingIndex);
+    
     if (currentPlayingIndex === index) {
       stopAllAudio();
       currentPlayingIndex = -1;
@@ -312,22 +320,24 @@ audioButtons.forEach((button, index) => {
 
     try {
       currentPlayingIndex = index;
-      this.classList.add('loading');
+      item.classList.add('loading');
 
       // Pass the index to playAudioFromIndexedDB
-      await playAudioFromIndexedDB(this.dataset.audio, index);
+      await playAudioFromIndexedDB(item.dataset.audio, index);
 
-      this.classList.remove('loading');
-      this.classList.add('active');
+      item.classList.remove('loading');
+      item.classList.add('active');
+      playIcon.classList.replace('fa-play', 'fa-stop');
     } catch (error) {
       console.error('Error playing audio:', error);
-      this.classList.remove('loading', 'active');
+      item.classList.remove('loading', 'active');
+      playIcon.classList.replace('fa-stop', 'fa-play');
       currentPlayingIndex = -1;
     }
   });
 });
 
-//Stop current audio
+// Update the stop function
 function stopAllAudio() {
   if (sourceNode) {
     sourceNode.stop();
@@ -335,10 +345,11 @@ function stopAllAudio() {
     sourceNode = null;
   }
   // Reset all buttons to inactive state
-  audioButtons.forEach(button => {
-    button.classList.remove('active', 'loading');
+  audioButtons.forEach(item => {
+    item.classList.remove('active', 'loading');
+    const icon = item.querySelector('.play-btn i');
+    icon.classList.replace('fa-stop', 'fa-play');
   });
-  // Reset playing index
 }
 
 // Volume slider
